@@ -1,0 +1,25 @@
+﻿@page "/"
+
+<h1>Public Key</h1>
+<p>Shareable key:</p>
+@if (_publicKey != null)
+{
+<textarea readonly disabled style="width: 100%; height: 100% !important">
+    @_publicKey
+</textarea>
+}
+else
+{
+    <pre>Loading...</pre>
+}
+@code {
+    private string _publicKey;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _publicKey = await File.ReadAllTextAsync(MainLayout.PublicFile);
+    }
+
+
+}

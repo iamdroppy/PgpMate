@@ -1,0 +1,51 @@
+﻿@inherits LayoutComponentBase
+
+@if (_loading)
+{
+<div style="background-color: black; color: green; width: 100%; height: 100% !important; position: fixed; top: 0px; text-align:center">
+    <div style="margin-top: 50%">
+    Generating keys - it may take a while...
+    </div>
+</div>
+}
+else
+{
+<div class="sidebar">
+	<NavMenu />
+</div>
+
+<div class="main">
+	<div class="top-row px-4">
+		<a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+	</div>
+
+	<div class="content px-4">
+		@Body
+	</div>
+    <hr>
+    <button class="btn btn-danger" @onclick="EraseAllAsync">Erase all</button>
+</div>
+}
+@code {
+    public static MemoryStream _privateKey;
+    private int _remaining = 5;
+    private bool _loading = true;
+    public static string PrivateFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "pr");
+    public static string PublicFile  = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "pu");
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (_loading && (!File.Exists(PrivateFile) || !File.Exists(PublicFile)))
+        {
+            using var pgp = new PGP();
+
+            await pgp.GenerateKeyAsync(PublicFile, PrivateFile, strength: 4096, emitVersion: false, password: "NabzEverywhere");
+        }
+        _loading = false;
+    }
+    public async Task EraseAllAsync() {
+        File.Delete(PrivateFile);
+        File.Delete(PublicFile);
+        Environment.Exit(0);
+    }
+}

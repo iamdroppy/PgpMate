@@ -1,0 +1,77 @@
+﻿@page "/fetchdata"
+
+@using PgpMate.Data
+@using System.Text
+@inject WeatherForecastService ForecastService
+
+<h1>Message</h1>
+@if (!_set)
+{
+<p>Other's user PGP:</p>
+<textarea @bind="GuestPublic"></textarea><BR/>
+<button class="btn btn-success" @onclick="() => _set = true">Start</button>
+}
+else
+{
+	<p>Decrypt:</p>
+	<textarea @bind="_decryptInput"></textarea><BR/>
+	<button class="btn btn-success" @onclick="DecryptAsync">Decrypt</button><BR/>
+	<textarea>@_msg</textarea>
+
+	<hr/>
+	<p>Encrypt:</p>
+	<textarea @bind="_encryptInput"></textarea><BR/>
+	<button class="btn btn-success" @onclick="EncryptAsync">Encrypt</button><BR/>
+	<textarea disabled>@_encrypted</textarea>
+}
+
+
+@code {
+	private string GuestPublic {get;set;}
+	private bool _set;
+	private string _msg;
+	private string _encrypted;
+	private string _decryptInput;
+	private string _encryptInput;
+	private WeatherForecast[] forecasts;
+
+	protected override async Task OnInitializedAsync()
+	{
+		forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
+	}
+
+	protected async Task DecryptAsync()
+	{
+		try {
+			var publicKey = await File.ReadAllTextAsync(MainLayout.PublicFile);
+			var privateKey = await File.ReadAllTextAsync(MainLayout.PrivateFile);
+			await using var input = new MemoryStream(Encoding.UTF8.GetBytes(_decryptInput));
+			await using var output = new MemoryStream();
+			using var pgp = new PGP();
+			await pgp.DecryptStreamAsync(input, output, new EncryptionKeys(privateKey, "NabzEverywhere"));
+			_msg = Encoding.UTF8.GetString(output.ToArray());
+		}
+		catch(Exception ex)
+		{
+			_msg = ex.Message + "\n" + ex.StackTrace;
+		}
+	}
+
+
+	protected async Task EncryptAsync()
+	{
+		try
+		{
+			await using var input = new MemoryStream(Encoding.UTF8.GetBytes(_encryptInput));
+			await using var output = new MemoryStream();
+			using var pgp = new PGP();
+			await pgp.EncryptStreamAsync(input, output, new EncryptionKeys(GuestPublic));
+			_encrypted = Encoding.UTF8.GetString(output.ToArray());
+
+		}
+		catch(Exception ex)
+		{
+			_encrypted = ex.Message + "\n" + ex.StackTrace;
+		}
+	}
+}

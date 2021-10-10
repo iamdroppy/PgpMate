@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PgpMate.WinUI": {
+      "commandName": "MsixPackage",
+      "nativeDebugging": false
+    }
+  }
+}
